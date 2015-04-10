@@ -7638,10 +7638,16 @@ void write_perf_test(kilo64,reclen ,data1,data2)
         if(file_lock)
             if(mylockf((int) fd, (int) 1, (int)0)!=0)
                 printf("File lock for write failed. %d\n",errno);
+#if 0
+        /* 
+         * I think the elapsed time has to include mmap() cost,
+         * so this initfile() func should be called after starttime1 is fixed.
+         */
         if(mmapflag)
         {
             maddr=(char *)initfile(fd,filebytes64,1,PROT_READ|PROT_WRITE);
         }
+#endif
         if(mmap_mix)
         {
             wval=write(fd, pbuff, (size_t) page_size);
@@ -7674,6 +7680,16 @@ void write_perf_test(kilo64,reclen ,data1,data2)
         if(verify || dedup || dedup_interior)
             fill_buffer(pbuff,reclen,(long long)pattern,sverify,(long long)0);
         starttime1 = time_so_far();
+#if 1
+        /*
+         * This part moves in here.
+         * To add the mapping cost to the elapsed time.
+         */
+        if(mmapflag)
+        {
+            maddr=(char *)initfile(fd,filebytes64,1,PROT_READ|PROT_WRITE);
+        }
+#endif
 #ifdef unix
         if(Q_flag)
         {
@@ -8594,10 +8610,16 @@ read_perf_test(kilo64,reclen,data1,data2)
         if(file_lock)
             if(mylockf((int) fd, (int) 1, (int)1) != 0)
                 printf("File lock for read failed. %d\n",errno);
+#if 0
+        /* 
+         * I think the elapsed time has to include mmap() cost,
+         * so this initfile() func should be called after starttime2 is fixed.
+         */
         if(mmapflag)
         {
             maddr=(char *)initfile(fd,filebytes64,0,PROT_READ);
         }
+#endif
 #if defined(Windows)
         if(!unbuffered)
 #endif
@@ -8635,6 +8657,16 @@ read_perf_test(kilo64,reclen,data1,data2)
         if(fetchon)
             fetchit(nbuff,reclen);
         starttime2 = time_so_far();
+#if 1
+        /*
+         * This part moves in here.
+         * To add the mapping cost to the elapsed time.
+         */
+        if(mmapflag)
+        {
+            maddr=(char *)initfile(fd,filebytes64,0,PROT_READ);
+        }
+#endif
 #ifdef unix
         if(Q_flag || hist_summary)
         {
