@@ -59,6 +59,16 @@
 /************************************************************************/
 
 
+/* New flags for Intelligent page-fault handler */
+#define MAP_INTELLIGENT_HANDLER     0x100000
+#define MAP_ASYNC_HANDLER           0x200000
+
+/* mmap type */
+#define DEFAULT         0
+#define POPULATE        1
+#define INTELLIGENT     2 
+#define ASYNC           3
+
 /* The version number */
 #define THISVERSION "        Version $Revision: 3.430 $"
 
@@ -1521,6 +1531,7 @@ char write_traj_filename [MAXNAMESIZE];     /* name of write telemetry file */
 char read_traj_filename [MAXNAMESIZE];    /* name of read telemetry file  */
 char oflag,jflag,k_flag,h_flag,mflag,pflag,unbuffered,Kplus_flag;
 char noretest;
+int mmaptype = DEFAULT;
 char notruncate;   /* turn off truncation of files */
 char async_flag,stride_flag,mmapflag,mmapasflag,mmapssflag,mmapnsflag,mmap_mix;
 char verify = 1;
@@ -2581,6 +2592,18 @@ main(argc,argv)
                     case 'n':	/* Set no-retest */
                         noretest = 1;	
                         sprintf(splash[splash_line++],"\tNo retest option selected\n");
+                        break;
+                    case 'Q':   /* -+Q : populate mmap */
+                        mmaptype = POPULATE;
+                        sprintf(splash[splash_line++],"\tMAP_POPULATE flag is set\n");
+                        break;
+                    case 'R':   /* -+R : intelligent page-fault handler */
+                        mmaptype = INTELLIGENT;
+                        sprintf(splash[splash_line++],"\tIntelligent page-fault handler is set\n");
+                        break;
+                    case 'Y':   /* -+Y : asynchronous handler */
+                        mmaptype = ASYNC;
+                        sprintf(splash[splash_line++],"\tIntelligent page-fault handler(ASYNC) is set\n");
                         break;
                     case 'k':	/* Constant aggregate data set size */
                         aggflag=1;
@@ -19124,6 +19147,20 @@ initfile(fd, filebytes,flag, prot)
         mflags=MAP_FILE|MAP_SHARED;
     else
         mflags=MAP_FILE|MAP_PRIVATE;
+
+    switch (mmaptype) {
+        case DEFAULT:
+            break;
+        case POPULATE:
+            mflags |= MAP_POPULATE;
+            break;
+        case INTELLIGENT:
+            mflags |= MAP_INTELLIGENT_HANDLER;
+            break;
+        case ASYNC:
+            mflags |= MAP_INTELLIGENT_HANDLER|MAP_ASYNC_HANDLER;
+            break;
+    }
 #endif
 #endif
 
