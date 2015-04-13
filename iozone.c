@@ -1532,6 +1532,7 @@ char read_traj_filename [MAXNAMESIZE];    /* name of read telemetry file  */
 char oflag,jflag,k_flag,h_flag,mflag,pflag,unbuffered,Kplus_flag;
 char noretest;
 int mmaptype = DEFAULT;
+float access_ratio = 100;
 char notruncate;   /* turn off truncation of files */
 char async_flag,stride_flag,mmapflag,mmapasflag,mmapssflag,mmapnsflag,mmap_mix;
 char verify = 1;
@@ -2604,6 +2605,16 @@ main(argc,argv)
                     case 'Y':   /* -+Y : asynchronous handler */
                         mmaptype = ASYNC;
                         sprintf(splash[splash_line++],"\tIntelligent page-fault handler(ASYNC) is set\n");
+                        break;
+                    case 'G':
+                        subarg=argv[optind++];
+                        if(subarg==(char *)0)
+                        {
+                            printf("-+i takes an operand !!\n");
+                            exit(200);
+                        }
+                        access_ratio = atoi(subarg);
+                        sprintf(splash[splash_line++],"\tAccess Ratio = %d%\n", access_ratio);
                         break;
                     case 'k':	/* Constant aggregate data set size */
                         aggflag=1;
@@ -9181,7 +9192,7 @@ void random_perf_test(kilo64,reclen,data1,data2)
         }
 #endif
         if ( j==0 ){ /* start read */
-            for(i=0; i<numrecs64; i++) {
+            for(i=0; i<(numrecs64 * (float)(access_ratio / 100)); i++) {
                 if(compute_flag)
                     compute_val+=do_compute(compute_time);
                 if(multi_buffer)
@@ -9297,7 +9308,7 @@ void random_perf_test(kilo64,reclen,data1,data2)
         {
             if(verify || dedup || dedup_interior)
                 fill_buffer(nbuff,reclen,(long long)pattern,sverify,(long long)0);
-            for(i=0; i<numrecs64; i++) 
+            for(i=0; i<(numrecs64 * (float)(access_ratio / 100)); i++) 
             {
                 if(compute_flag)
                     compute_val+=do_compute(compute_time);
