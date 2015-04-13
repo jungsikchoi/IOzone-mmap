@@ -9142,10 +9142,16 @@ void random_perf_test(kilo64,reclen,data1,data2)
             }
         }
 #endif
+#if 0
+        /*
+         * I think the elapsed time has to include mmap() cost,
+         * so this initfile() func should be called after starttime2 is fixed.
+         */
         if(mmapflag)
         {
             maddr=(char *)initfile(fd,filebytes64,0,PROT_READ|PROT_WRITE);
         }
+#endif
         nbuff=mainbuffer;
         if(fetchon)
             fetchit(nbuff,reclen);
@@ -9164,6 +9170,16 @@ void random_perf_test(kilo64,reclen,data1,data2)
 #endif
         compute_val=(double)0;
         starttime2 = time_so_far();
+#if 1
+        /*
+         * This part moves in here.
+         * To add the mapping cost to the elapsed time.
+         */
+        if(mmapflag)
+        {
+            maddr=(char *)initfile(fd,filebytes64,0,PROT_READ|PROT_WRITE);
+        }
+#endif
         if ( j==0 ){ /* start read */
             for(i=0; i<numrecs64; i++) {
                 if(compute_flag)
