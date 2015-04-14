@@ -7689,7 +7689,8 @@ void write_perf_test(kilo64,reclen ,data1,data2)
         if(fetchon)
             fetchit(pbuff,reclen);
         if(verify || dedup || dedup_interior)
-            fill_buffer(pbuff,reclen,(long long)pattern,sverify,(long long)0);
+            if(!mmapflag)
+                fill_buffer(pbuff,reclen,(long long)pattern,sverify,(long long)0);
         starttime1 = time_so_far();
 #if 1
         /*
@@ -7781,7 +7782,12 @@ void write_perf_test(kilo64,reclen ,data1,data2)
             if(mmapflag)
             {
                 wmaddr = &maddr[i*reclen];
+#if 0
                 fill_area((long long*)pbuff,(long long*)wmaddr,(long long)reclen);
+#else
+                pbuff = wmaddr;
+                fill_buffer(pbuff,reclen,(long long)pattern,sverify,(long long)0);
+#endif
                 if(!mmapnsflag)
                 {
                     if(mmapasflag)
@@ -8748,7 +8754,11 @@ read_perf_test(kilo64,reclen,data1,data2)
             if(mmapflag)
             {
                 wmaddr=&maddr[i*reclen];
+#if 0
                 fill_area((long long*)wmaddr,(long long*)nbuff,(long long)reclen);
+#else
+                nbuff = wmaddr;
+#endif
             }
             else
             {
@@ -9251,7 +9261,11 @@ void random_perf_test(kilo64,reclen,data1,data2)
                 if(mmapflag)
                 {
                     wmaddr=&maddr[offset64];
+#if 0
                     fill_area((long long*)wmaddr,(long long*)nbuff,(long long)reclen);
+#else
+                    nbuff = wmaddr;
+#endif
                 }
                 else
                 {
@@ -9307,7 +9321,8 @@ void random_perf_test(kilo64,reclen,data1,data2)
         else
         {
             if(verify || dedup || dedup_interior)
-                fill_buffer(nbuff,reclen,(long long)pattern,sverify,(long long)0);
+                if (!mmapflag)
+                    fill_buffer(nbuff,reclen,(long long)pattern,sverify,(long long)0);
             for(i=0; i<(numrecs64 * (float)(access_ratio / 100)); i++) 
             {
                 if(compute_flag)
@@ -9368,7 +9383,12 @@ void random_perf_test(kilo64,reclen,data1,data2)
                 if(mmapflag)
                 {
                     wmaddr=&maddr[offset64];
+#if 0
                     fill_area((long long*)nbuff,(long long*)wmaddr,(long long)reclen);
+#else
+                    nbuff = wmaddr;
+                    fill_buffer(nbuff,reclen,(long long)pattern,sverify,(long long)0);
+#endif
                     if(!mmapnsflag)
                     {
                         if(mmapasflag)
