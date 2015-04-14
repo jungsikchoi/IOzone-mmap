@@ -58,7 +58,6 @@
 /* 									*/
 /************************************************************************/
 
-
 /* New flags for Intelligent page-fault handler */
 #define MAP_INTELLIGENT_HANDLER     0x100000
 #define MAP_ASYNC_HANDLER           0x200000
@@ -68,6 +67,7 @@
 #define POPULATE        1
 #define INTELLIGENT     2 
 #define ASYNC           3
+#define ASYNC_TEST      4
 
 /* The version number */
 #define THISVERSION "        Version $Revision: 3.430 $"
@@ -135,6 +135,8 @@ unsigned long long genrand64_int64(void);
 #endif
 
 #include <fcntl.h>
+#include "iozone-mmap.h"
+
 
 char *help[] = {
     "    Usage: iozone [-s filesize_kB] [-r record_size_kB] [-f [path]filename] [-h]",
@@ -1533,6 +1535,7 @@ char oflag,jflag,k_flag,h_flag,mflag,pflag,unbuffered,Kplus_flag;
 char noretest;
 int mmaptype = DEFAULT;
 float access_ratio = 100;
+unsigned long async_ratio = 0;
 char notruncate;   /* turn off truncation of files */
 char async_flag,stride_flag,mmapflag,mmapasflag,mmapssflag,mmapnsflag,mmap_mix;
 char verify = 1;
@@ -2606,15 +2609,30 @@ main(argc,argv)
                         mmaptype = ASYNC;
                         sprintf(splash[splash_line++],"\tIntelligent page-fault handler(ASYNC) is set\n");
                         break;
-                    case 'G':
+                    case 'G':   /* -+G #access_ratio */
                         subarg=argv[optind++];
                         if(subarg==(char *)0)
                         {
-                            printf("-+i takes an operand !!\n");
+                            printf("-+G takes an operand !!\n");
                             exit(200);
                         }
                         access_ratio = atoi(subarg);
                         sprintf(splash[splash_line++],"\tAccess Ratio = %d%\n", access_ratio);
+                        break;
+                    case 'g':   /* -+g #async_ratio */
+                        mmaptype = ASYNC_TEST;
+                        subarg=argv[optind++];
+                        if(subarg==(char *)0)
+                        {
+                            printf("-+g takes an operand !!\n");
+                            exit(200);
+                        }
+                        async_ratio = (unsigned long)atoi(subarg);
+                        if (async_ratio < 0 && async_ratio > 100) {
+                            printf("-+g #ratio : This ratio is impertinent!!\n");
+                            exit(200);
+                        }
+                        sprintf(splash[splash_line++],"\tAsync Ratio = %ld%\n", async_ratio);
                         break;
                     case 'k':	/* Constant aggregate data set size */
                         aggflag=1;
@@ -19238,6 +19256,8 @@ initfile(fd, filebytes,flag, prot)
             break;
         case ASYNC:
             mflags |= MAP_INTELLIGENT_HANDLER|MAP_ASYNC_HANDLER;
+        case ASYNC_TEST:
+            mflags |= MAP_INTELLIGENT_HANDLER|MAP_ASYNC_HANDLER;
             break;
     }
 #endif
@@ -19247,8 +19267,14 @@ initfile(fd, filebytes,flag, prot)
     pa = (char *)mmap( 0,&filebytes, (int)prot, 
             (int)mflags, (int)fd, 0);
 #else
-    pa = (char *)I_MMAP( ((char *)0),filebytes, prot, 
-            mflags, fd, 0);
+    if (mmaptype == ASYNC_TEST) {
+        pa = (char *)mmap_test( ((char *)0),filebytes, prot, 
+                mflags, fd, async_ratio);
+    }
+    else {
+        pa = (char *)I_MMAP( ((char *)0),filebytes, prot, 
+                mflags, fd, 0);
+    }
 #endif
 #ifdef __convex_spp
     if(pa == (char *)-1)
